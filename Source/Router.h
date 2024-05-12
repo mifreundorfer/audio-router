@@ -34,10 +34,12 @@ public:
 
     juce::StringArray getInputDeviceNames() { return deviceType->getDeviceNames(true); }
     juce::StringArray getOutputDevicNames() { return deviceType->getDeviceNames(false); }
+    juce::StringArray getAvailableBufferSizes();
 
     void timerCallback() override;
 
     int channelCount = 2;
+    int bufferSize = 0;
     juce::String inputDeviceName = "";
     juce::String outputDeviceName = "";
 

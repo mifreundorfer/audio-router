@@ -58,6 +58,7 @@ void Router::saveSettingsToFile(juce::File file)
     juce::XmlElement rootElement("AudioRouter");
 
     rootElement.setAttribute("channelCount", channelCount);
+    rootElement.setAttribute("bufferSize", bufferSize);
 
     auto inputDevice = new juce::XmlElement("InputDevice");
     inputDevice->setAttribute("name", inputDeviceName);
@@ -77,6 +78,7 @@ void Router::loadSettingsFromFile(juce::File file)
 {
     auto doc = juce::XmlDocument::parse(file);
     channelCount = 0;
+    bufferSize = 0;
     inputDeviceName = "";
     outputDeviceName = "";
     if (doc == nullptr)
@@ -86,6 +88,7 @@ void Router::loadSettingsFromFile(juce::File file)
     }
 
     channelCount = doc->getIntAttribute("channelCount");
+    bufferSize = doc->getIntAttribute("bufferSize");
 
     auto elem = doc->getChildByName("InputDevice");
     if (elem == nullptr)
@@ -106,6 +109,21 @@ void Router::loadSettingsFromFile(juce::File file)
     {
         outputDeviceName = elem->getStringAttribute("name");
     }
+}
+
+juce::StringArray Router::getAvailableBufferSizes() 
+{ 
+    juce::StringArray result;
+
+    if (audioDevice != nullptr)
+    {
+        for (int bufferSize : audioDevice->getAvailableBufferSizes())
+        {
+            result.add(juce::String(bufferSize));
+        }
+    }
+
+    return result;
 }
 
 void Router::timerCallback()
@@ -131,20 +149,19 @@ void Router::tryStartingAudioDevice()
             channelIndices |= 1 << i;
         }
 
-        int smallestBufferSize = 0;
+        int closestBufferSize = 0;
+        int closestDiff = std::numeric_limits<int>::max();
         for (int bufferSize : audioDevice->getAvailableBufferSizes())
         {
-            if (smallestBufferSize == 0)
+            int diff = std::abs(bufferSize - this->bufferSize);
+            if (diff < closestDiff)
             {
-                smallestBufferSize = bufferSize;
-            }
-            else if (bufferSize < smallestBufferSize)
-            {
-                smallestBufferSize = bufferSize;
+                closestBufferSize = bufferSize;
+                closestDiff = diff;
             }
         }
 
-        juce::String error = audioDevice->open(channelIndices, channelIndices, 48000, smallestBufferSize);
+        juce::String error = audioDevice->open(channelIndices, channelIndices, 48000, closestBufferSize);
         if (error.isNotEmpty())
         {
             juce::Logger::getCurrentLogger()->writeToLog("Failed to open audio device");

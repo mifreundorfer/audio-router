@@ -4,6 +4,30 @@
 
 #include "Router.h"
 
+class BufferSizeComboBox : public juce::ComboBox
+{
+public:    
+    BufferSizeComboBox(Router* router)
+        : router(router)
+    {
+    }
+
+protected:
+    virtual void showPopup() override
+    {
+        clear(juce::dontSendNotification);
+
+        addItemList(router->getAvailableBufferSizes(), 1);
+
+        setText(juce::String(router->bufferSize), juce::dontSendNotification);
+
+        juce::ComboBox::showPopup();
+    }
+
+private:
+    Router* router;
+};
+
 class MainComponent : public juce::Component,
                       public juce::Timer,
                       public juce::ComboBox::Listener,
@@ -37,6 +61,9 @@ private:
 
     juce::Label channelCountLabel;
     juce::TextEditor channelCountField;
+
+    juce::Label bufferSizeLabel;
+    BufferSizeComboBox bufferSizeChooser;
 
     juce::ToggleButton autostartToggle;
 

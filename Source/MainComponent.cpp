@@ -8,9 +8,10 @@ static juce::String getAutostartCommand()
 }
 
 MainComponent::MainComponent(Router* router) :
-    router(router)
+    router(router),
+    bufferSizeChooser(router)
 {
-    setSize(350, 180);
+    setSize(350, 210);
 
     addAndMakeVisible(statusLabel);
 
@@ -33,6 +34,12 @@ MainComponent::MainComponent(Router* router) :
     channelCountField.addListener(this);
     addAndMakeVisible(channelCountLabel);
     addAndMakeVisible(channelCountField);
+
+    bufferSizeLabel.setText("Buffer Size:", juce::dontSendNotification);
+    bufferSizeChooser.setText(juce::String(router->bufferSize), juce::dontSendNotification);
+    bufferSizeChooser.addListener(this);
+    addAndMakeVisible(bufferSizeLabel);
+    addAndMakeVisible(bufferSizeChooser);
 
     auto path = juce::WindowsRegistry::getValue(autostartRegKey);
     bool autostartEnabled = path == getAutostartCommand();
@@ -102,6 +109,12 @@ void MainComponent::resized()
     rect.removeFromTop(8);
 
     row = rect.removeFromTop(20);
+    bufferSizeLabel.setBounds(row.removeFromLeft(120));
+    bufferSizeChooser.setBounds(row);
+
+    rect.removeFromTop(8);
+
+    row = rect.removeFromTop(20);
     autostartToggle.setBounds(row);
 
     row = rect.removeFromBottom(20);
@@ -133,6 +146,15 @@ void MainComponent::comboBoxChanged(juce::ComboBox* comboBox)
         if (index != -1)
         {
             router->outputDeviceName = outputDeviceChooser.getItemText(index);
+        }
+    }
+
+    if (comboBox == &bufferSizeChooser)
+    {
+        int index = bufferSizeChooser.getSelectedItemIndex();
+        if (index != -1)
+        {
+            router->bufferSize = bufferSizeChooser.getItemText(index).getIntValue();
         }
     }
 }
